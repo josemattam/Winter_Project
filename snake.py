@@ -32,6 +32,7 @@ state[x_food, y_food] = 2
 
 print(state)
 
+"""
 while running:
     # input to network 
     # ...
@@ -46,4 +47,5 @@ while running:
         state = cand_state
     else:
         # do if snake runs into itself, wall, or tries to go back into itself
-    
+        
+"""

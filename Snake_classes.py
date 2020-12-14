@@ -30,8 +30,58 @@ class snake():
     head_x: int
     head_y: int 
     
-    # block array list
-    block_list: []
+    # array list of snake blocks
+    snake_blocks: []
+    
+    # snake length
+    length: int
+    
+    # length of the square grid map
+    grid_length: int
+    
+    # direction the snake is facing
+    direction: str
+    
+    
+    # constructor: will create the snake and add it to the world map
+    # requirements: either no parameters or all included parameters
+    def __init__(self, head_x = 3, head_y = 8, grid_length = 10):
+        
+        
+        create_snake()
+        
+        pass
+    
+    
+    # adds the snake to the grid, sets the direction the snake faces
+    # TODO: make the body spawn in a random direction
+    def create_snake(self):
+        
+        # add the head to the snake_block list
+        snake_blocks.append(block(head_x, head_y, 1))
+        
+        # sets the body at the bottom left location of the grid
+        snake_blocks.append(block(head_x - 1, head_y, 1))
+        snake_blocks.append(block(head_x - 2, head_y, 1))
+
+        direction = "east"
+        return
+    
+    
+    #def snake_move(self, new_dir):
+        
+        
+        
+    
+"""        
+    # returns the list of snake blocks
+    def get_snake_blocks(self):
+        return snake_blocks
+"""
+
+    
+        
+    
 
         
         
