@@ -7,7 +7,7 @@ Author: spideyonthego
 
 import numpy as np
 
-board_size = 10
+board_size = 20
 state = np.zeros((board_size, board_size))
 
 # returns the next state matrix given the current state and move
