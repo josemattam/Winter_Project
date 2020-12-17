@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import random
 import pygame
 import tkinder as tk
+from tkinder import messagebox
 import numpy as np
 from collections import deque
 
@@ -30,6 +31,28 @@ class Block():
         self.xloc = _xloc
         self.yloc = _yloc
         self.block_type = _block_type
+        
+    ## VIEW FUNCTION ##
+        
+    def draw_block(self, width, rows, surface):
+        color = (0, 0, 0)
+        
+        # if it's a snake block
+        if self.block_type == 1:
+            color = (255, 255, 255)
+            
+        # if it's a wall block
+        elif self.block_type == 5:
+            color = (255, 0, 0)
+            
+        # if it's a food block
+        elif self.block_type == 2:
+            color = (0, 0, 255)
+            
+        distance = width // rows
+        
+        pygame.draw.rect(surface, color, (self.xloc * distance + 1, self.yloc * distance + 1,
+                                          distance - 2, distance - 2))
 
     
 @dataclass
@@ -98,12 +121,17 @@ class Snake():
         return self.snake_blocks.pop()
     
     
-    #def snake_move(self, new_dir):
+    ## VIEW FUNCTION ##
+    def draw_snake(self, width, rows, surface):
+        for block in self.snake_blocks:
+            block.draw_block(width, rows, surface)
         
         
         
 @dataclass
 class World():
+    
+    ## IMPLEMENT REWARD SYSTEMS
     
     # length of the square grid map
     grid_rows: int
@@ -117,35 +145,66 @@ class World():
     # the player's snake
     snake: Snake
     
+    # the food block
+    food: Block
+    
+    # the walls as an array of blocks
+    walls: [Block]
+    
     # the player's food_count
     food_count: int
+    
+    # the player's score
+    score: int
+    """
+    """
     
     def __init__(self, grid_rows = 20, prog_length = 500):
         self.grid_rows = grid_rows
         self.prog_length = prog_length
+        self.score = 0
+        self.food_count = 0
+
         
         # initialize the world grid to a 2d array of zeroes
         self.world_grid = np.zeros((grid_rows, grid_rows))
         
-        # set the walls in the world grid
-        self.world_grid[:, 0] = 5 
-        self.world_grid[0, :] = 5
-        self.world_grid[-1, :] = 5
-        self.world_grid[:, -1] = 5
-    
-        self.food_count = 0
+        self.set_walls()
         
-        # VIEW: set the program display window
-        window = pygame.display.set_mode((prog_length, prog_length))
-
         self.spawn_snake()
         
-        # spawn food
+        self.spawn_food()
         
         #start clock...
         
         return
     
+    
+    # set the walls in the world
+    #shaky
+    def set_walls(self):
+        self.world_grid[:, 0] = 5 
+        self.world_grid[0, :] = 5
+        self.world_grid[-1, :] = 5
+        self.world_grid[:, -1] = 5
+        
+        i = 0
+        while i < self.world_grid[:, 0]:
+            self.walls.append(Block(i, 0, 5))
+            
+        i = 0
+        while i < self.world_grid[0, :]:
+            self.walls.append(Block(0, i, 5))
+            
+        i = 0
+        while i < self.world_grid[-1, :]:
+            self.walls.append(Block(self.grid_rows - 1, i, 5))
+            
+        i = 0
+        while i < self.world_grid[:, -1]:
+            self.walls.append(Block(i, self.grid_rows - 1, 5))
+        
+        
     
     # move the snake in a new or same direction based on the input direction given    
     # returns 1 if movement was successful and 0 if not (ie. if the snake hits a wall/itself or not)
@@ -220,18 +279,19 @@ class World():
         return 1
     
     
-    # 
+    # increases snake length and spwans another food
     def __snake_eat(self, _direction):
         # add to the snake length when it eats
         self.snake.length += 1
+        self.score += 10
         
         # TODO: ADD TO SCORE
         self.spawn_food()
+
+    # spawn the snake
+    def spawn_snake(self): 
         
-    def get_snake_dir(self):
-        pass
-        
-    def spawn_snake(self):    
+        #
         self.snake = Snake()
         # randomize later
         self.world_grid[3][18] = 1
@@ -239,13 +299,18 @@ class World():
         self.world_grid[1][18] = 1
         return Block(self.snake.head_x, self.snake.head_y, 1)
         
-        
+    # spawns the food in a random valid position    
     def spawn_food(self):
         choices = np.where(self.world_grid == 0)
         x_food = np.random.choice(choices[0])
         y_food = np.random.choice(choices[1])
         self.world_grid[x_food, y_food] = 2
-        return Block(x_food, y_food, 2)
+        self.food = Block(x_food, y_food, 2)
+        return 
+    
+    # resets the game
+    def reset(self):
+        pass
         
     
     ## VIEW FUNCTIONS ##
@@ -257,16 +322,28 @@ class World():
     def draw_grid(self):
         pass
     
+    # displays the end message. called when a game is over
     def end_message(self):
-        pass
-    
+        # press any key to continue?
+        # check how iterations are carried out
+        
+        root = tk.Tk()
+        root.attributes("-topmost", True)
+        root.withdraw()
+        messagebox.showinfo("Game Over", "Score: " + self.score)
+        try:
+            root.destroy()
+        except:
+            pass
+            
     
     ## END OF VIEW FUNCTIONS ##
     
     
     ## CONTROLLER FUNCTIONS ##
     
-    def keypress_move(self):
+    # controller function for all key/mouse events
+    def keypress_event(self):
         # for every key/mouse press event, iterate this loop
         for event in pygame.event.get():
             
@@ -297,16 +374,37 @@ class World():
                 
                 
     
-    def main():
-        world = World()
+def main():
+    world = World()
         
+    # VIEW: create the program display window
+    window = pygame.display.set_mode((world.prog_length, world.prog_length))
         
+    #
+    clock = pygame.time.Clock()
         
-        
-        
+    while True:
+        # 
+        pygame.time.delay(50)
+        clock.tick(10)
     
+        # checks for input and does accordingly. valid = 1 the game continues
+        valid = world.keypress_event()
         
+        # if the game ends
+        if valid == 0:
+            world.end_message()
+            world.reset()
+            break
+            
+        world.draw_window(window)
+            
+    return
+    
+    
+main()
         
+            
         
         
         
