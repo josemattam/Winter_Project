@@ -6,8 +6,8 @@ Author: Jose Mattam and Anand Krishnakumar
 from dataclasses import dataclass
 import random
 import pygame
-import tkinder as tk
-from tkinder import messagebox
+import tkinter as tk
+from tkinter import messagebox
 import numpy as np
 from collections import deque
 
@@ -63,8 +63,7 @@ class Snake():
     head_x: int
     head_y: int 
     
-    # array list of snake blocks
-    snake_blocks: deque[Block]
+
         
     # length of the square grid map
     grid_rows: int
@@ -83,6 +82,8 @@ class Snake():
         self.direction = direction
         self.grid_rows = grid_rows
         self.direction = direction
+        # array list of snake blocks
+        self.snake_blocks = deque[Block]
         self.create_snake()
         
         return
@@ -150,8 +151,7 @@ class World():
     
 
        
-    # world grid
-    world_grid: [int][int]
+
     
     # the player's snake
     snake: Snake
@@ -183,6 +183,8 @@ class World():
         # initialize the world grid to a 2d array of zeroes
         self.world_grid = np.zeros((grid_rows, grid_rows))
         
+        #initialize the wall list
+        self.walls = []        
         self.set_walls()
         
         self.spawn_snake()
@@ -203,22 +205,12 @@ class World():
         self.world_grid[:, -1] = 5
         
         i = 0
-        while i < self.world_grid[:, 0]:
+        while i < self.grid_rows:
             self.walls.append(Block(i, 0, 5))
-            
-        i = 0
-        while i < self.world_grid[0, :]:
             self.walls.append(Block(0, i, 5))
-            
-        i = 0
-        while i < self.world_grid[-1, :]:
+            self.walls.append(Block(i, self.grid_rows - 1, 5))
             self.walls.append(Block(self.grid_rows - 1, i, 5))
             
-        i = 0
-        while i < self.world_grid[:, -1]:
-            self.walls.append(Block(i, self.grid_rows - 1, 5))
-        
-        
     
     # move the snake in a new or same direction based on the input direction given    
     # returns 1 if movement was successful and 0 if not (ie. if the snake hits a wall/itself or not)
@@ -464,9 +456,6 @@ def main():
         
     # create a game world
     world = World()
-        
-    # VIEW: create the program display window
-    window = pygame.display.set_mode((world.prog_length, world.prog_length))
     
     #
     clock = pygame.time.Clock()
@@ -485,7 +474,7 @@ def main():
             world.reset()
             break
             
-        world.draw_window(window)
+        world.setup_view()
             
     return
     
