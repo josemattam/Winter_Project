@@ -235,6 +235,8 @@ class World():
               (self.snake.direction == "south" and _direction == "north") or
               (self.snake.direction == "east" and _direction == "west") or
               (self.snake.direction == "west" and _direction == "east")):
+            # reducing score to discouage this
+            self.score -= 5
             return self.move_action(self.snake.direction)
 
         else:
@@ -333,24 +335,44 @@ class World():
         self.change_view(self.food)
         return 
     
-    # resets the game
+    # resets the game (controller and view)
     def reset(self):
-        pass
+        # snake:
+        self.snake = Snake()
+        self.spawn_snake()  
+        # food:
+        self.spawn_food()
+        # walls:
+        self.set_walls()
+        # view:
+        self.setup_view()
         
     
     ## VIEW FUNCTIONS ##
         
     # calls the necessary functions to setup the view of a game of snake
-    def view_setup(self):
-        pass
-                   
-            
-    def draw_walls(self):
+    def setup_view(self):
+        # set the bg to be black
+        self.prog_window.fill((0, 0, 0))
+        self.draw_grid()
+        # draw walls
         self.change_view_list(self.walls)
-          
-     
+        # draw snake
+        self.change_view_list(self.snake.snake_blocks)     
+        # draw food
+        self.change_view(self.food)            
+
+    # draws the grid on which the snake moves and plays the game
     def draw_grid(self):
-        pass
+        distance = self.prog_length // self.grid_rows
+        x = 0
+        y = 0
+        for row in range(self.grid_rows):
+            x += distance
+            y += distance
+            
+            pygame.draw.line(self.prog_window, (255,255,255), (x, 0), (x, self.prog_length))
+            pygame.draw.line(self.prog_window, (255,255,255), (0, y),(self.prog_length, y))
     
     
     # draws the given changed block. Needed for the updation of the game for each frame
@@ -378,7 +400,7 @@ class World():
                                                    block.head_y * distance + 1,
                                                    distance - 2, distance - 2))
         
-        pass
+        
     
     # change view for a list of blocks
     def change_view_list(self, blocks):
