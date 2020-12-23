@@ -13,6 +13,9 @@ from collections import deque
 
 
 # ADD POSSIBLE REWARD SYSTEM TYPES 
+"""
+debug by printing matrix every frame
+"""
 
 @dataclass
 class Block():
