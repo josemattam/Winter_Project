@@ -38,7 +38,7 @@ class Block():
         
     ## VIEW FUNCTION ##
         
-    def draw_block(self, width, rows, surface):
+    def draw_block(self, width, rows, prog_window):
         color = (0, 0, 0)
         
         # if it's a snake block
@@ -55,7 +55,7 @@ class Block():
             
         distance = width // rows
         
-        pygame.draw.rect(surface, color, (self.xloc * distance + 1, self.yloc * distance + 1,
+        pygame.draw.rect(prog_window, color, (self.xloc * distance + 1, self.yloc * distance + 1,
                                           distance - 2, distance - 2))
 
     
@@ -86,14 +86,14 @@ class Snake():
         self.grid_rows = grid_rows
         self.direction = direction
         # array list of snake blocks
-        self.snake_blocks = deque[Block]
+        self.snake_blocks = deque()
         self.create_snake()
         
         return
     
     # adds the snake to the grid, sets the direction the snake faces
     # TODO: make the body spawn in a random direction
-    def __create_snake(self):
+    def create_snake(self):
         
         # not sure if we need to initialize snake_blocks
         
@@ -129,7 +129,7 @@ class Snake():
         return Block(self.head_x, self.head_y, 1)
     
     def get_tail(self):
-        return Block(self.snake_blocks[-1].head_x, self.snake_blocks[-1].head_y, 1)
+        return Block(self.snake_blocks[-1].xloc, self.snake_blocks[-1].yloc, 1)
     
     ## VIEW FUNCTION ##
     def draw_snake(self, width, rows, surface):
@@ -146,7 +146,7 @@ class World():
     
     ## IMPLEMENT REWARD SYSTEMS
     
-    # length of the square grid map
+    # length of a side of the square grid map
     grid_rows: int
     
     # length of the side of the program window
@@ -180,7 +180,7 @@ class World():
         self.food_count = 0
         
         # VIEW: set up the program window to draw onto
-        self.prog_window = pygame.display.set_mode((self.prog_length, self.prog_length))
+        prog_window = pygame.display.set_mode((self.prog_length, self.prog_length))
 
         
         # initialize the world grid to a 2d array of zeroes
@@ -189,11 +189,12 @@ class World():
         #initialize the wall list
         self.walls = []        
         self.set_walls()
-        
+                
         self.spawn_snake()
         
         self.spawn_food()
         
+        self.setup_view()
         #start clock...
         
         return
@@ -213,6 +214,7 @@ class World():
             self.walls.append(Block(0, i, 5))
             self.walls.append(Block(i, self.grid_rows - 1, 5))
             self.walls.append(Block(self.grid_rows - 1, i, 5))
+            i += 1
             
     
     # move the snake in a new or same direction based on the input direction given    
@@ -242,7 +244,7 @@ class World():
 
     # private helper function that moves the snake in the grid and sets its new direction.
     # performs suitable action if the snake interacts with another block
-    def __move_action(self, _direction):
+    def move_action(self, _direction):
 
         # list of all changed blocks (for use in change of view)
         changed_blocks = []
@@ -282,7 +284,7 @@ class World():
            
         # if the snake hits a food block
         if self.world_grid[new_x][new_y] == 2:
-            self.change_view_list(changed_blocks)
+            self.change_view_list(changed_blocks, prog_window)
             return self.snake_eat(_direction)
         
         
@@ -295,19 +297,19 @@ class World():
         self.world_grid[tail_block.xloc][tail_block.yloc] = 0
         changed_blocks.append(self.snake.get_tail())
 
-        self.change_view_list(changed_blocks)
+        self.change_view_list(changed_blocks, prog_window)
         # successful move
         return 1
     
     
     # increases snake length and spwans another food
-    def __snake_eat(self, _direction):        
+    def snake_eat(self, _direction, prog_window):        
         # add to the snake length when it eats
         self.snake.length += 1
         self.score += 10
         
         # TODO: ADD TO SCORE, add chang to grid view change
-        self.spawn_food()
+        self.spawn_food(prog_window)
 
     # spawn the snake
     def spawn_snake(self): 
@@ -321,13 +323,13 @@ class World():
         return Block(self.snake.head_x, self.snake.head_y, 1)
         
     # spawns the food in a random valid position    
-    def spawn_food(self):
+    def spawn_food(self, prog_window):
         choices = np.where(self.world_grid == 0)
         x_food = np.random.choice(choices[0])
         y_food = np.random.choice(choices[1])
         self.world_grid[x_food, y_food] = 2
         self.food = Block(x_food, y_food, 2)
-        self.change_view(self.food)
+        self.change_view(self.food, prog_window)
         return 
     
     # resets the game (controller and view)
@@ -346,19 +348,19 @@ class World():
     ## VIEW FUNCTIONS ##
         
     # calls the necessary functions to setup the view of a game of snake
-    def setup_view(self):
+    def setup_view(self, prog_window):
         # set the bg to be black
-        self.prog_window.fill((0, 0, 0))
-        self.draw_grid()
+        prog_window.fill((0, 0, 0))
+        self.draw_grid(prog_window)
         # draw walls
-        self.change_view_list(self.walls)
+        self.change_view_list(self.walls, prog_window)
         # draw snake
-        self.change_view_list(self.snake.snake_blocks)     
+        self.change_view_list(self.snake.snake_blocks, prog_window)     
         # draw food
-        self.change_view(self.food)            
+        self.change_view(self.food, prog_window)            
 
     # draws the grid on which the snake moves and plays the game
-    def draw_grid(self):
+    def draw_grid(self, prog_window):
         distance = self.prog_length // self.grid_rows
         x = 0
         y = 0
@@ -366,12 +368,13 @@ class World():
             x += distance
             y += distance
             
-            pygame.draw.line(self.prog_window, (255,255,255), (x, 0), (x, self.prog_length))
-            pygame.draw.line(self.prog_window, (255,255,255), (0, y),(self.prog_length, y))
+            #draw doesnt work
+            pygame.draw.line(prog_window, (255,255,255), (x, 0), (x, self.prog_length))
+            pygame.draw.line(prog_window, (255,255,255), (0, y),(self.prog_length, y))
     
     
     # draws the given changed block. Needed for the updation of the game for each frame
-    def change_view(self, block):
+    def change_view(self, block, prog_window):
         # block color = black
         color = (0, 0, 0)
         
@@ -391,16 +394,16 @@ class World():
         # TODO COMMENT EXPLAINING
         distance = self.prog_length // self.grid_rows
             
-        pygame.draw.rect(self.prog_window, color, (block.head_x * distance + 1,
-                                                   block.head_y * distance + 1,
+        pygame.draw.rect(prog_window, color, (block.xloc * distance + 1,
+                                                   block.yloc * distance + 1,
                                                    distance - 2, distance - 2))
         
         
     
     # change view for a list of blocks
-    def change_view_list(self, blocks):
+    def change_view_list(self, blocks, prog_window):
         for block in blocks:
-            self.change_view(block)
+            self.change_view(block, prog_window)
 
     
     # displays the end message. called when a game is over
@@ -436,16 +439,16 @@ class World():
             keys = pygame.key.get_pressed()
             
             for key in keys:
-                if keys[pygame.K_W]:
+                if keys[pygame.K_w]:
                     self.snake_move("north")
                     
-                elif keys[pygame.K_S]:
+                elif keys[pygame.K_s]:
                     self.snake_move("south")
                     
-                elif keys[pygame.K_A]:
+                elif keys[pygame.K_a]:
                     self.snake_move("west")
                     
-                elif keys[pygame.K_D]:
+                elif keys[pygame.K_d]:
                     self.snake_move("east")
                     
                     
@@ -453,9 +456,15 @@ class World():
                 
     ## END OF CONTROLLER FUNCTIONS ##                
                 
-                
+           
     
 def main():
+        
+    """
+    width = 500
+    rows = 20
+    window = pygame.display.set_mode((width, width))
+        """
         
     # create a game world
     world = World()
@@ -481,7 +490,33 @@ def main():
             
     return
     
+    """
     
+def main():
+    # create a game world
+    world = World()
+    
+    #
+    clock = pygame.time.Clock()
+    
+    while True:
+        # 
+        pygame.time.delay(50)
+        clock.tick(10)
+    
+        # checks for input and does accordingly. valid = 1 the game continues
+        valid = world.keypress_event()
+        
+        # if the game ends
+        if valid == 0:
+            print("Game over: score is " + world.score)
+            world.reset()
+            break
+        
+        world.setup_view()
+            
+    return
+    """
 main()
         
             
