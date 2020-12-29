@@ -35,28 +35,6 @@ class Block():
         self.xloc = _xloc
         self.yloc = _yloc
         self.block_type = _block_type
-        
-    ## VIEW FUNCTION ##
-        
-    def draw_block(self, width, rows, prog_window):
-        color = (0, 0, 0)
-        
-        # if it's a snake block
-        if self.block_type == 1:
-            color = (255, 255, 255)
-            
-        # if it's a wall block
-        elif self.block_type == 5:
-            color = (255, 0, 0)
-            
-        # if it's a food block
-        elif self.block_type == 2:
-            color = (0, 0, 255)
-            
-        distance = width // rows
-        
-        pygame.draw.rect(prog_window, color, (self.xloc * distance + 1, self.yloc * distance + 1,
-                                          distance - 2, distance - 2))
 
     
 @dataclass
@@ -130,13 +108,7 @@ class Snake():
     
     def get_tail(self):
         return Block(self.snake_blocks[-1].xloc, self.snake_blocks[-1].yloc, 1)
-    
-    ## VIEW FUNCTION ##
-    def draw_snake(self, width, rows, surface):
-        for block in self.snake_blocks:
-            block.draw_block(width, rows, surface)
-            
-    
+ 
         
         
         
@@ -180,11 +152,14 @@ class World():
         self.food_count = 0
         
         # VIEW: set up the program window to draw onto
-        prog_window = pygame.display.set_mode((self.prog_length, self.prog_length))
+        self.prog_window = pygame.display.set_mode((self.prog_length, self.prog_length))
 
         
         # initialize the world grid to a 2d array of zeroes
         self.world_grid = np.zeros((grid_rows, grid_rows))
+        
+        # list of all changed blocks (for use in change of view)
+        self.changed_blocks = []
         
         #initialize the wall list
         self.walls = []        
@@ -195,6 +170,7 @@ class World():
         self.spawn_food()
         
         self.setup_view()
+        
         #start clock...
         
         return
@@ -247,9 +223,9 @@ class World():
     def move_action(self, _direction):
 
         # list of all changed blocks (for use in change of view)
-        changed_blocks = []
-        changed_blocks.append(self.snake.get_head())
-        changed_blocks.append(self.snake.get_tail())        
+        self.changed_blocks = []
+        self.changed_blocks.append(self.snake.get_head())
+        self.changed_blocks.append(self.snake.get_tail())        
 
         # step 1: move head
         
@@ -279,12 +255,12 @@ class World():
         # implement change to world grid and to the snake
         self.world_grid[new_x][new_y] = 1   
         self.snake.add_head_xy(new_x, new_y)
-        changed_blocks.append(self.snake.get_head())
+        self.changed_blocks.append(self.snake.get_head())
 
            
         # if the snake hits a food block
         if self.world_grid[new_x][new_y] == 2:
-            self.change_view_list(changed_blocks, prog_window)
+            self.change_view_list(self.changed_blocks)
             return self.snake_eat(_direction)
         
         
@@ -295,21 +271,21 @@ class World():
         
         # implement change to world grid
         self.world_grid[tail_block.xloc][tail_block.yloc] = 0
-        changed_blocks.append(self.snake.get_tail())
+        self.changed_blocks.append(self.snake.get_tail())
 
-        self.change_view_list(changed_blocks, prog_window)
+        self.change_view_list(self.changed_blocks)
         # successful move
         return 1
     
     
     # increases snake length and spwans another food
-    def snake_eat(self, _direction, prog_window):        
+    def snake_eat(self, _direction):        
         # add to the snake length when it eats
         self.snake.length += 1
         self.score += 10
         
         # TODO: ADD TO SCORE, add chang to grid view change
-        self.spawn_food(prog_window)
+        self.spawn_food()
 
     # spawn the snake
     def spawn_snake(self): 
@@ -322,18 +298,21 @@ class World():
         self.world_grid[1][18] = 1
         return Block(self.snake.head_x, self.snake.head_y, 1)
         
-    # spawns the food in a random valid position    
-    def spawn_food(self, prog_window):
+    # spawns the food in a random valid position 
+    # can make more efficient: choices doesnt need to exist
+    def spawn_food(self):
         choices = np.where(self.world_grid == 0)
         x_food = np.random.choice(choices[0])
         y_food = np.random.choice(choices[1])
         self.world_grid[x_food, y_food] = 2
         self.food = Block(x_food, y_food, 2)
-        self.change_view(self.food, prog_window)
+        self.change_view(self.food)
         return 
     
     # resets the game (controller and view)
     def reset(self):
+        # world: 
+        self.world_grid = np.zeros((self.grid_rows, self.grid_rows))    
         # snake:
         self.snake = Snake()
         self.spawn_snake()  
@@ -348,19 +327,19 @@ class World():
     ## VIEW FUNCTIONS ##
         
     # calls the necessary functions to setup the view of a game of snake
-    def setup_view(self, prog_window):
+    def setup_view(self):
         # set the bg to be black
-        prog_window.fill((0, 0, 0))
-        self.draw_grid(prog_window)
+        #self.prog_window.fill((0, 0, 0))
+        self.draw_grid()
         # draw walls
-        self.change_view_list(self.walls, prog_window)
+        self.change_view_list(self.walls)
         # draw snake
-        self.change_view_list(self.snake.snake_blocks, prog_window)     
+        self.change_view_list(self.snake.snake_blocks)     
         # draw food
-        self.change_view(self.food, prog_window)            
+        self.change_view(self.food)            
 
     # draws the grid on which the snake moves and plays the game
-    def draw_grid(self, prog_window):
+    def draw_grid(self):
         distance = self.prog_length // self.grid_rows
         x = 0
         y = 0
@@ -368,13 +347,13 @@ class World():
             x += distance
             y += distance
             
-            #draw doesnt work
-            pygame.draw.line(prog_window, (255,255,255), (x, 0), (x, self.prog_length))
-            pygame.draw.line(prog_window, (255,255,255), (0, y),(self.prog_length, y))
+            #draw doesnt work??
+            pygame.draw.line(self.prog_window, (255,255,255), (x, 0), (x, self.prog_length))
+            pygame.draw.line(self.prog_window, (255,255,255), (0, y), (self.prog_length, y))
     
     
     # draws the given changed block. Needed for the updation of the game for each frame
-    def change_view(self, block, prog_window):
+    def change_view(self, block):
         # block color = black
         color = (0, 0, 0)
         
@@ -394,16 +373,19 @@ class World():
         # TODO COMMENT EXPLAINING
         distance = self.prog_length // self.grid_rows
             
-        pygame.draw.rect(prog_window, color, (block.xloc * distance + 1,
+        pygame.draw.rect(self.prog_window, color, (block.xloc * distance + 1,
                                                    block.yloc * distance + 1,
                                                    distance - 2, distance - 2))
         
         
     
     # change view for a list of blocks
-    def change_view_list(self, blocks, prog_window):
+    def change_view_list(self, blocks):
         for block in blocks:
-            self.change_view(block, prog_window)
+            self.change_view(block)
+            
+    def new_frame(self):
+        self.change_view_list(self.changed_blocks)
 
     
     # displays the end message. called when a game is over
@@ -471,10 +453,12 @@ def main():
     
     #
     clock = pygame.time.Clock()
+    
+    setup_flag = True
         
     while True:
         # 
-        pygame.time.delay(50)
+        pygame.time.delay(500)
         clock.tick(10)
     
         # checks for input and does accordingly. valid = 1 the game continues
@@ -486,7 +470,11 @@ def main():
             world.reset()
             break
             
-        world.setup_view()
+        if setup_flag:
+            setup_flag = False
+            world.setup_view()
+        world.new_frame()
+        #print(world.world_grid)
             
     return
     
