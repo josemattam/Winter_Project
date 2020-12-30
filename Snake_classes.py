@@ -244,7 +244,7 @@ class World():
         elif _direction == "east":
             dx = 1
         
-        else:
+        elif _direction == "west":
             dx = -1
          
         new_x = self.snake.head_x + dx   
@@ -315,6 +315,7 @@ class World():
     
     # resets the game (controller and view)
     def reset(self):
+        print("reset called")
         # world: 
         self.world_grid = np.zeros((self.grid_rows, self.grid_rows))    
         # snake:
@@ -332,6 +333,7 @@ class World():
         
     # calls the necessary functions to setup the view of a game of snake
     def setup_view(self, window):
+        print("setup view called")
         # set the bg to be black
         window.fill((0, 0, 0))
         self.draw_grid(window)
@@ -341,18 +343,23 @@ class World():
         self.change_view_list(self.snake.snake_blocks)     
         # draw food
         #self.change_view(self.food) 
-        self.changed_blocks.append(self.food)           
+        self.changed_blocks.append(self.food)   
+
+        pygame.display.update()        
 
     # draws the grid on which the snake moves and plays the game
     def draw_grid(self, window):
         distance = self.prog_length // self.grid_rows
         x = 0
         y = 0
+        print("drawgrid print")
+        
         for row in range(self.grid_rows):
             x += distance
             y += distance
             
             #draw doesnt work??
+            
             pygame.draw.line(window, (255,255,255), (x, 0), (x, self.prog_length))
             pygame.draw.line(window, (255,255,255), (0, y), (self.prog_length, y))
     
@@ -379,8 +386,9 @@ class World():
         distance = self.prog_length // self.grid_rows
             
         pygame.draw.rect(surface, color, (block.xloc * distance + 1,
-                                                   block.yloc * distance + 1,
-                                                   distance - 2, distance - 2))
+                                          block.yloc * distance + 1,
+                                          distance - 2, distance - 2))
+        pygame.display.update()
         
         
     
@@ -392,6 +400,7 @@ class World():
             
     # TODO:
     def new_frame(self, surface):
+        print("new frame called")
         #self.change_view_list(self.changed_blocks)
         for block in self.changed_blocks:
             self.draw_changed_block(block, surface)
@@ -441,6 +450,7 @@ class World():
                     self.snake_move("west")
                     
                 elif keys[pygame.K_d]:
+                    #print("d pressed")
                     self.snake_move("east")
                     
                     
@@ -478,7 +488,7 @@ def main():
         if valid == 0:
             world.end_message()
             world.reset(window)
-            break
+            
             
         if setup_flag:
             setup_flag = False
