@@ -14,7 +14,7 @@ from collections import deque
 
 # ADD POSSIBLE REWARD SYSTEM TYPES 
 """
-debug by printing matrix every frame
+X AND Y LOCATIONS ARE SWAPPED!!!
 """
 
 @dataclass
@@ -294,10 +294,15 @@ class World():
         
         #
         self.snake = Snake()
-        # randomize later
+        # CHANGE LOCATION LATER
         self.world_grid[3][18] = 1
         self.world_grid[2][18] = 1
         self.world_grid[1][18] = 1
+        """
+        self.world_grid[18][3] = 1
+        self.world_grid[18][2] = 1
+        self.world_grid[18][1] = 1
+        """
         return Block(self.snake.head_x, self.snake.head_y, 1)
         
     # spawns the food in a random valid position 
@@ -400,8 +405,11 @@ class World():
             
     # TODO:
     def new_frame(self, surface):
-        print("new frame called")
+        #print("new frame called")
         #self.change_view_list(self.changed_blocks)
+        self.snake_move(self.snake.direction)
+        print(self.snake.snake_blocks)
+        print(self.world_grid)
         for block in self.changed_blocks:
             self.draw_changed_block(block, surface)
         pass
